@@ -39,10 +39,10 @@
 
   // --- Lightbox (equipe/gallery grid) ---
   var galeria = [
-    { src: "uploads/equipe-17.webp", titulo: "Nossa recepção", legenda: "Escritório com estrutura real e consolidada" },
-    { src: "uploads/admin-ajax-1.webp", titulo: "A equipe", legenda: "Advogados e time de atendimento do escritório" },
-    { src: "uploads/19.webp", titulo: "Sala de atendimento", legenda: "Atendimento presencial em nossa sede ou por reunião online" },
-    { src: "uploads/16.webp", titulo: "Como trabalhamos", legenda: "Cada caso é analisado em conjunto pela equipe" }
+    { src: "uploads/recepcao-escritorio-vieira-marques.webp", titulo: "Nossa recepção", legenda: "Escritório com estrutura real e consolidada" },
+    { src: "uploads/equipe-escritorio-vieira-marques-advogados.webp", titulo: "A equipe", legenda: "Advogados e time de atendimento do escritório" },
+    { src: "uploads/sala-atendimento-escritorio-advocacia.webp", titulo: "Sala de atendimento", legenda: "Atendimento presencial em nossa sede ou por reunião online" },
+    { src: "uploads/advogada-analisando-caso-golpe-pix.webp", titulo: "Como trabalhamos", legenda: "Cada caso é analisado em conjunto pela equipe" }
   ];
 
   function openLightbox(item) {
