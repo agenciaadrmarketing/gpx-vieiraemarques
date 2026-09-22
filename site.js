@@ -127,10 +127,9 @@
 
   // ======================= POPUP DE CONTATO (qualificação >R$10k) =======================
   var WA_PHONE = "551533470189";
-  // TODO: sem endpoint de planilha próprio para esta LP ainda. Passe a URL de um
-  // Google Apps Script Web App dedicado (não reaproveite o de outra LP) para
-  // ativar o envio - enquanto estiver vazio, enviarPlanilha() não faz nada.
-  var SHEET_ENDPOINT = "";
+  // Google Apps Script Web App dedicado a esta LP (grava na planilha +
+  // notifica recjohny091@gmail.com e agencia.adrmarketing@gmail.com).
+  var SHEET_ENDPOINT = "https://script.google.com/macros/s/AKfycbwDCMLNOJw6KNDbZIOD-HxGxMUXYjcq3qlWVdVeLYFBFuA7_WKWpFLWlFRZcS5419cC/exec";
   var MENSAGEM_FIXA = "Oi, vim pela página de Golpe do Pix e preciso de atendimento urgente.";
 
   var popupState = { open: false, pendingMsg: "" };
