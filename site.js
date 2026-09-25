@@ -259,22 +259,25 @@
       nome: nome, whatsapp: tel, faixa_valor: faixaValor,
       mensagem: popupState.pendingMsg || "", origem_form: "popup", pagina: window.location.href
     }, utm);
-    // sendBeacon é feito pra sobreviver a navegação/fechamento de página (o
-    // que pode acontecer logo em seguida, quando window.open é bloqueado e
-    // caímos para window.location.href) - fetch/Image não têm essa garantia.
-    var enviado = false;
+    // Dispara os 3 mecanismos sempre, sem depender de um só - o retorno de
+    // sendBeacon() só confirma que o navegador aceitou enfileirar o envio,
+    // não que ele chegou no servidor. O /exec do Apps Script sempre responde
+    // com um redirecionamento (302 para script.googleusercontent.com), e em
+    // vários navegadores isso faz o sendBeacon falhar depois do redirect sem
+    // avisar. Image (GET) segue redirecionamento normalmente e é o que
+    // comprovadamente funciona; sendBeacon continua disparando também por
+    // sobreviver a navegação/fechamento de página. A deduplicação do lado do
+    // Apps Script (mesmo WhatsApp em menos de 2 min) evita linha duplicada.
+    var qs = Object.keys(dados).map(function (k) {
+      return encodeURIComponent(k) + "=" + encodeURIComponent(dados[k] || "");
+    }).join("&");
+    try { new Image().src = SHEET_ENDPOINT + "?" + qs; } catch (err) {}
+    try { fetch(SHEET_ENDPOINT, { method: "POST", mode: "no-cors", body: JSON.stringify(dados) }); } catch (err) {}
     if (navigator.sendBeacon) {
       try {
         var blob = new Blob([JSON.stringify(dados)], { type: "text/plain;charset=UTF-8" });
-        enviado = navigator.sendBeacon(SHEET_ENDPOINT, blob);
+        navigator.sendBeacon(SHEET_ENDPOINT, blob);
       } catch (err) {}
-    }
-    if (!enviado) {
-      var qs = Object.keys(dados).map(function (k) {
-        return encodeURIComponent(k) + "=" + encodeURIComponent(dados[k] || "");
-      }).join("&");
-      try { new Image().src = SHEET_ENDPOINT + "?" + qs; } catch (err) {}
-      try { fetch(SHEET_ENDPOINT, { method: "POST", mode: "no-cors", body: JSON.stringify(dados) }); } catch (err) {}
     }
   }
 
