@@ -279,8 +279,20 @@
     var faixaValor = faixaEl.value;
     var msg = popupState.pendingMsg + " (Prejuízo estimado: " + faixaValor + ")";
     var url = "https://wa.me/" + WA_PHONE + "?text=" + encodeURIComponent(msg);
+
+    // window.open PRIMEIRO e de forma síncrona, como resposta direta ao clique.
+    // Se qualquer coisa assíncrona (fetch, Image) rodar antes, navegadores
+    // móveis (principalmente Safari/iOS) descartam a permissão de "gesto do
+    // usuário" e bloqueiam a aba em silêncio - sem erro, sem aviso. Isso fazia
+    // a conversão ser registrada (fetch funciona normal) mas o WhatsApp nunca
+    // abria de fato. Se mesmo assim vier bloqueado, cai para navegação na
+    // própria aba como último recurso.
+    var novaAba = window.open(url, "_blank", "noopener,noreferrer");
+    if (!novaAba) {
+      window.location.href = url;
+    }
+
     enviarPlanilha(nome, tel, faixaValor);
-    window.open(url, "_blank", "noopener,noreferrer");
     window.dataLayer = window.dataLayer || [];
     window.dataLayer.push({ event: "whatsapp_click", link_url: url, link_text: "Popup: " + faixaValor });
     try { sessionStorage.setItem("popup_lead_enviado", "1"); } catch (err) {}
