@@ -292,34 +292,45 @@
     var msg = popupState.pendingMsg + " (Prejuízo estimado: " + faixaValor + ")";
     var url = "https://wa.me/" + WA_PHONE + "?text=" + encodeURIComponent(msg);
 
-    // window.open PRIMEIRO e de forma síncrona, como resposta direta ao clique.
-    // Se qualquer coisa assíncrona (fetch, Image) rodar antes, navegadores
-    // móveis (principalmente Safari/iOS) descartam a permissão de "gesto do
-    // usuário" e bloqueiam a aba em silêncio - sem erro, sem aviso. Isso fazia
-    // a conversão ser registrada (fetch funciona normal) mas o WhatsApp nunca
-    // abria de fato.
-    var novaAba = window.open(url, "_blank", "noopener,noreferrer");
-
-    // Planilha e Data Layer disparam ANTES de qualquer navegação de fallback:
-    // se window.open foi bloqueado e a gente cai pra window.location.href logo
-    // abaixo, isso troca o documento atual e pode cortar chamadas que ainda
-    // não saíram. Disparando tudo aqui primeiro (com sendBeacon, feito pra
-    // sobreviver a navegação) garante que o envio realmente saia antes.
+    // Planilha via sendBeacon: independe do GTM e sobrevive a qualquer
+    // navegação que vier a seguir.
     enviarPlanilha(nome, tel, faixaValor);
-    window.dataLayer = window.dataLayer || [];
-    // Evento padrão exigido pela integração via Data Layer (Painel de Sites/GTM):
-    // só dispara aqui, depois que nome/WhatsApp/faixa de valor já passaram na
-    // validação acima - ou seja, só em envio validado com sucesso.
-    window.dataLayer.push({ event: "lead_form_submitted", nome: nome, faixa_valor: faixaValor });
-    window.dataLayer.push({ event: "whatsapp_click", link_url: url, link_text: "Popup: " + faixaValor });
     try { sessionStorage.setItem("popup_lead_enviado", "1"); } catch (err) {}
 
-    // Só agora, por último: se window.open não conseguiu abrir uma aba nova,
-    // navega a aba atual como último recurso pra garantir que o visitante
-    // chegue no WhatsApp de algum jeito.
-    if (!novaAba) {
-      window.location.href = url;
+    var jaSeguiu = false;
+    function seguirParaWhatsapp() {
+      if (jaSeguiu) return;
+      jaSeguiu = true;
+      // window.open o mais perto possível do clique original (dentro do
+      // eventCallback do GTM, que roda de forma síncrona quando o GTM já
+      // carregou) pra não perder o "gesto do usuário": navegadores móveis
+      // (Safari/iOS) descartam essa permissão se algo assíncrono rodar antes
+      // e bloqueiam a aba em silêncio - sem erro, sem aviso.
+      var novaAba = window.open(url, "_blank", "noopener,noreferrer");
+      if (!novaAba) window.location.href = url;
     }
+
+    window.dataLayer = window.dataLayer || [];
+    // eventCallback/eventTimeout: só segue pro WhatsApp depois que o GTM
+    // processar o evento e disparar as tags ligadas a ele (ou após 1,5s, o
+    // que vier primeiro). Sem isso, a navegação pro WhatsApp corta a página
+    // antes do GTM - que carrega de forma assíncrona - processar o dataLayer,
+    // e a tag nunca chega a disparar de fato (era esse o bug: conversão
+    // registrada na planilha, mas a tag do GTM ficava sem disparar).
+    window.dataLayer.push({
+      event: "lead_form_submitted",
+      nome: nome,
+      faixa_valor: faixaValor,
+      eventCallback: seguirParaWhatsapp,
+      eventTimeout: 1500
+    });
+    window.dataLayer.push({ event: "whatsapp_click", link_url: url, link_text: "Popup: " + faixaValor });
+
+    // Rede de segurança: se o GTM não carregar (bloqueador de anúncios, falha
+    // de rede), o eventCallback acima nunca dispara sozinho - isso garante
+    // que o lead chegue no WhatsApp de qualquer forma.
+    setTimeout(seguirParaWhatsapp, 1500);
+
     fecharPopup();
   }
 
