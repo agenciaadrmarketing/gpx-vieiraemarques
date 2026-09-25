@@ -259,11 +259,23 @@
       nome: nome, whatsapp: tel, faixa_valor: faixaValor,
       mensagem: popupState.pendingMsg || "", origem_form: "popup", pagina: window.location.href
     }, utm);
-    var qs = Object.keys(dados).map(function (k) {
-      return encodeURIComponent(k) + "=" + encodeURIComponent(dados[k] || "");
-    }).join("&");
-    try { new Image().src = SHEET_ENDPOINT + "?" + qs; } catch (err) {}
-    try { fetch(SHEET_ENDPOINT, { method: "POST", mode: "no-cors", body: JSON.stringify(dados) }); } catch (err) {}
+    // sendBeacon é feito pra sobreviver a navegação/fechamento de página (o
+    // que pode acontecer logo em seguida, quando window.open é bloqueado e
+    // caímos para window.location.href) - fetch/Image não têm essa garantia.
+    var enviado = false;
+    if (navigator.sendBeacon) {
+      try {
+        var blob = new Blob([JSON.stringify(dados)], { type: "text/plain;charset=UTF-8" });
+        enviado = navigator.sendBeacon(SHEET_ENDPOINT, blob);
+      } catch (err) {}
+    }
+    if (!enviado) {
+      var qs = Object.keys(dados).map(function (k) {
+        return encodeURIComponent(k) + "=" + encodeURIComponent(dados[k] || "");
+      }).join("&");
+      try { new Image().src = SHEET_ENDPOINT + "?" + qs; } catch (err) {}
+      try { fetch(SHEET_ENDPOINT, { method: "POST", mode: "no-cors", body: JSON.stringify(dados) }); } catch (err) {}
+    }
   }
 
   function enviarPopup(e) {
@@ -285,17 +297,29 @@
     // móveis (principalmente Safari/iOS) descartam a permissão de "gesto do
     // usuário" e bloqueiam a aba em silêncio - sem erro, sem aviso. Isso fazia
     // a conversão ser registrada (fetch funciona normal) mas o WhatsApp nunca
-    // abria de fato. Se mesmo assim vier bloqueado, cai para navegação na
-    // própria aba como último recurso.
+    // abria de fato.
     var novaAba = window.open(url, "_blank", "noopener,noreferrer");
+
+    // Planilha e Data Layer disparam ANTES de qualquer navegação de fallback:
+    // se window.open foi bloqueado e a gente cai pra window.location.href logo
+    // abaixo, isso troca o documento atual e pode cortar chamadas que ainda
+    // não saíram. Disparando tudo aqui primeiro (com sendBeacon, feito pra
+    // sobreviver a navegação) garante que o envio realmente saia antes.
+    enviarPlanilha(nome, tel, faixaValor);
+    window.dataLayer = window.dataLayer || [];
+    // Evento padrão exigido pela integração via Data Layer (Painel de Sites/GTM):
+    // só dispara aqui, depois que nome/WhatsApp/faixa de valor já passaram na
+    // validação acima - ou seja, só em envio validado com sucesso.
+    window.dataLayer.push({ event: "lead_form_submitted", nome: nome, faixa_valor: faixaValor });
+    window.dataLayer.push({ event: "whatsapp_click", link_url: url, link_text: "Popup: " + faixaValor });
+    try { sessionStorage.setItem("popup_lead_enviado", "1"); } catch (err) {}
+
+    // Só agora, por último: se window.open não conseguiu abrir uma aba nova,
+    // navega a aba atual como último recurso pra garantir que o visitante
+    // chegue no WhatsApp de algum jeito.
     if (!novaAba) {
       window.location.href = url;
     }
-
-    enviarPlanilha(nome, tel, faixaValor);
-    window.dataLayer = window.dataLayer || [];
-    window.dataLayer.push({ event: "whatsapp_click", link_url: url, link_text: "Popup: " + faixaValor });
-    try { sessionStorage.setItem("popup_lead_enviado", "1"); } catch (err) {}
     fecharPopup();
   }
 
