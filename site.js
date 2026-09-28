@@ -171,11 +171,15 @@
               'Até R$ 10.000' +
             '</label>' +
           '</fieldset>' +
-          '<p id="popup-aviso-valor" role="status" style="display:none;margin:0;font-size:13px;line-height:1.5;color:#FFD9A0;background:rgba(191,140,60,0.14);border:1px solid rgba(191,140,60,0.34);border-radius:8px;padding:10px 12px;">Atualmente priorizamos casos com prejuízo acima de R$ 10.000. Mesmo assim, você pode nos enviar sua mensagem — cada caso é avaliado individualmente.</p>' +
+          '<p id="popup-aviso-valor" role="status" style="display:none;margin:0;font-size:13px;line-height:1.5;color:#FFD9A0;background:rgba(191,140,60,0.14);border:1px solid rgba(191,140,60,0.34);border-radius:8px;padding:10px 12px;">No momento, atendemos exclusivamente casos com prejuízo acima de R$ 10.000. Selecionando essa opção, não será possível continuar para o WhatsApp.</p>' +
           '<p id="popup-erro" role="alert" style="display:none;margin:0;font-size:13px;line-height:1.5;color:#FFB4A8;background:rgba(191,60,60,0.16);border:1px solid rgba(191,60,60,0.36);border-radius:8px;padding:10px 12px;"></p>' +
           '<button type="submit" style="display:inline-flex;align-items:center;justify-content:center;gap:10px;width:100%;margin-top:6px;padding:16px 22px;border-radius:999px;font-weight:600;font-size:15px;background:#167E3B;color:#FFFFFF;border:1px solid #167E3B;cursor:pointer;">Continuar no WhatsApp</button>' +
           '<p style="margin:4px 0 0;text-align:center;font-size:11.5px;line-height:1.5;color:rgba(255,255,255,0.5);">Seus dados são sigilosos. Nada de spam.</p>' +
         '</form>' +
+        '<div id="popup-bloqueio" style="display:none;flex-direction:column;align-items:center;text-align:center;gap:14px;">' +
+          '<p style="margin:0;font-size:15px;line-height:1.6;color:#EDEDED;">No momento, atendemos exclusivamente casos com prejuízo <strong>acima de R$ 10.000</strong>. Anotamos seus dados e, caso a nossa triagem mude, entraremos em contato.</p>' +
+          '<button type="button" id="popup-bloqueio-fechar" style="display:inline-flex;align-items:center;justify-content:center;width:100%;margin-top:6px;padding:16px 22px;border-radius:999px;font-weight:600;font-size:15px;background:rgba(255,255,255,0.08);color:#FFFFFF;border:1px solid rgba(255,255,255,0.18);cursor:pointer;">Entendi</button>' +
+        '</div>' +
       '</div>';
     document.body.appendChild(veil);
     return veil;
@@ -198,6 +202,8 @@
     popupEls.erro.style.display = "none";
     popupEls.avisoValor.style.display = "none";
     popupEls.form.reset();
+    popupEls.form.style.display = "flex";
+    popupEls.bloqueio.style.display = "none";
     clearTimeout(popupEls._timer);
     clearTimeout(popupEls._fallbackTimer);
     popupEls.veil.style.display = "flex";
@@ -255,9 +261,10 @@
     if (!SHEET_ENDPOINT) return;
     var utm = {};
     try { utm = JSON.parse(sessionStorage.getItem("lead_utm") || "{}"); } catch (err) {}
+    var origemForm = faixaValor === "Até R$ 10.000" ? "popup_bloqueado_abaixo_10k" : "popup";
     var dados = Object.assign({
       nome: nome, whatsapp: tel, faixa_valor: faixaValor,
-      mensagem: popupState.pendingMsg || "", origem_form: "popup", pagina: window.location.href
+      mensagem: popupState.pendingMsg || "", origem_form: origemForm, pagina: window.location.href
     }, utm);
     // Dispara os 3 mecanismos sempre, sem depender de um só - o retorno de
     // sendBeacon() só confirma que o navegador aceitou enfileirar o envio,
@@ -292,6 +299,17 @@
       return;
     }
     var faixaValor = faixaEl.value;
+
+    // Abaixo de R$ 10.000: registra o lead na planilha (pra sabermos que
+    // tentou) mas não segue pro WhatsApp nem conta como conversão no GTM -
+    // não é um lead qualificado pro atendimento atual.
+    if (faixaValor === "Até R$ 10.000") {
+      enviarPlanilha(nome, tel, faixaValor);
+      popupEls.form.style.display = "none";
+      popupEls.bloqueio.style.display = "flex";
+      return;
+    }
+
     var msg = popupState.pendingMsg + " (Prejuízo estimado: " + faixaValor + ")";
     var url = "https://wa.me/" + WA_PHONE + "?text=" + encodeURIComponent(msg);
 
@@ -346,10 +364,12 @@
     popupEls.avisoValor = document.getElementById("popup-aviso-valor");
     popupEls.inputNome = document.getElementById("input-nome");
     popupEls.inputTel = document.getElementById("input-tel");
+    popupEls.bloqueio = document.getElementById("popup-bloqueio");
 
     veil.querySelectorAll("[data-fechar-popup]").forEach(function (el) {
       el.addEventListener("click", fecharPopup);
     });
+    document.getElementById("popup-bloqueio-fechar").addEventListener("click", fecharPopup);
     popupEls.form.addEventListener("submit", enviarPopup);
     popupEls.form.querySelectorAll('input[name="faixa_valor"]').forEach(function (radio) {
       radio.addEventListener("change", function () {
