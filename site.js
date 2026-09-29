@@ -171,13 +171,12 @@
               'Até R$ 10.000' +
             '</label>' +
           '</fieldset>' +
-          '<p id="popup-aviso-valor" role="status" style="display:none;margin:0;font-size:13px;line-height:1.5;color:#FFD9A0;background:rgba(191,140,60,0.14);border:1px solid rgba(191,140,60,0.34);border-radius:8px;padding:10px 12px;">No momento, atendemos exclusivamente casos com prejuízo acima de R$ 10.000. Selecionando essa opção, não será possível continuar para o WhatsApp.</p>' +
           '<p id="popup-erro" role="alert" style="display:none;margin:0;font-size:13px;line-height:1.5;color:#FFB4A8;background:rgba(191,60,60,0.16);border:1px solid rgba(191,60,60,0.36);border-radius:8px;padding:10px 12px;"></p>' +
           '<button type="submit" style="display:inline-flex;align-items:center;justify-content:center;gap:10px;width:100%;margin-top:6px;padding:16px 22px;border-radius:999px;font-weight:600;font-size:15px;background:#167E3B;color:#FFFFFF;border:1px solid #167E3B;cursor:pointer;">Continuar no WhatsApp</button>' +
           '<p style="margin:4px 0 0;text-align:center;font-size:11.5px;line-height:1.5;color:rgba(255,255,255,0.5);">Seus dados são sigilosos. Nada de spam.</p>' +
         '</form>' +
         '<div id="popup-bloqueio" style="display:none;flex-direction:column;align-items:center;text-align:center;gap:14px;">' +
-          '<p style="margin:0;font-size:15px;line-height:1.6;color:#EDEDED;">No momento, atendemos exclusivamente casos com prejuízo <strong>acima de R$ 10.000</strong>. Anotamos seus dados e, caso a nossa triagem mude, entraremos em contato.</p>' +
+          '<p style="margin:0;font-size:15px;line-height:1.6;color:#EDEDED;">No momento, atendemos exclusivamente casos com prejuízo <strong>acima de R$ 10.000</strong>.</p>' +
           '<button type="button" id="popup-bloqueio-fechar" style="display:inline-flex;align-items:center;justify-content:center;width:100%;margin-top:6px;padding:16px 22px;border-radius:999px;font-weight:600;font-size:15px;background:rgba(255,255,255,0.08);color:#FFFFFF;border:1px solid rgba(255,255,255,0.18);cursor:pointer;">Entendi</button>' +
         '</div>' +
       '</div>';
@@ -200,7 +199,6 @@
     popupState.open = true;
     popupState.pendingMsg = msg || MENSAGEM_FIXA;
     popupEls.erro.style.display = "none";
-    popupEls.avisoValor.style.display = "none";
     popupEls.form.reset();
     popupEls.form.style.display = "flex";
     popupEls.bloqueio.style.display = "none";
@@ -300,11 +298,11 @@
     }
     var faixaValor = faixaEl.value;
 
-    // Abaixo de R$ 10.000: registra o lead na planilha (pra sabermos que
-    // tentou) mas não segue pro WhatsApp nem conta como conversão no GTM -
-    // não é um lead qualificado pro atendimento atual.
+    // Defesa: na prática o formulário já some assim que "Até R$ 10.000" é
+    // selecionado (ver listener de "change" abaixo), então isso normalmente
+    // nem chega a rodar. Se rodar mesmo assim, desqualifica sem enviar nada
+    // pra planilha - não é um lead atendido, não há motivo pra registrar.
     if (faixaValor === "Até R$ 10.000") {
-      enviarPlanilha(nome, tel, faixaValor);
       popupEls.form.style.display = "none";
       popupEls.bloqueio.style.display = "flex";
       return;
@@ -361,7 +359,6 @@
     popupEls.pop = veil.querySelector(".tp-pop");
     popupEls.form = document.getElementById("popup-form");
     popupEls.erro = document.getElementById("popup-erro");
-    popupEls.avisoValor = document.getElementById("popup-aviso-valor");
     popupEls.inputNome = document.getElementById("input-nome");
     popupEls.inputTel = document.getElementById("input-tel");
     popupEls.bloqueio = document.getElementById("popup-bloqueio");
@@ -373,7 +370,13 @@
     popupEls.form.addEventListener("submit", enviarPopup);
     popupEls.form.querySelectorAll('input[name="faixa_valor"]').forEach(function (radio) {
       radio.addEventListener("change", function () {
-        popupEls.avisoValor.style.display = radio.value === "Até R$ 10.000" && radio.checked ? "block" : "none";
+        // Desqualifica na hora, antes mesmo de nome/WhatsApp serem
+        // preenchidos - não chega a coletar dado nenhum de quem está abaixo
+        // de R$ 10.000, então não há nada pra enviar pra planilha aqui.
+        if (radio.value === "Até R$ 10.000" && radio.checked) {
+          popupEls.form.style.display = "none";
+          popupEls.bloqueio.style.display = "flex";
+        }
       });
     });
 
