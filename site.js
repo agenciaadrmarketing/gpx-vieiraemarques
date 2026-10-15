@@ -125,15 +125,19 @@
     ciclo();
   }
 
-  // ======================= POPUP DE CONTATO (qualificação >R$10k) =======================
+  // ======================= POPUP DE CONTATO (quiz de qualificação, >R$10k) =======================
   var WA_PHONE = "551533470189";
   // Google Apps Script Web App dedicado a esta LP (grava na planilha +
   // notifica recjohny091@gmail.com e agencia.adrmarketing@gmail.com).
   var SHEET_ENDPOINT = "https://script.google.com/macros/s/AKfycbwDCMLNOJw6KNDbZIOD-HxGxMUXYjcq3qlWVdVeLYFBFuA7_WKWpFLWlFRZcS5419cC/exec";
-  var MENSAGEM_FIXA = "Oi, vim pela página de Golpe do Pix e preciso de atendimento urgente.";
 
   var popupState = { open: false, pendingMsg: "" };
   var popupEls = {};
+  var quizSteps = [];
+  var quizCounted = [];
+  var quizAnswers = {};
+  var quizHist = [];
+  var quizCur = 0;
 
   function criarPopup() {
     var veil = document.createElement("div");
@@ -143,45 +147,158 @@
     veil.setAttribute("aria-labelledby", "tp-form-titulo");
     veil.style.cssText = "display:none;position:fixed;inset:0;z-index:1200;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,0.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);opacity:0;transition:opacity .3s ease;";
     veil.innerHTML =
+      '<style>' +
+        '.popup-opt{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:13px 15px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.16);border-radius:10px;color:#EDEDED;font:inherit;font-size:14.5px;line-height:1.4;cursor:pointer;transition:border-color .15s ease,background .15s ease;}' +
+        '.popup-opt::before{content:"";flex:0 0 17px;width:17px;height:17px;border-radius:50%;border:2px solid rgba(255,255,255,0.35);box-sizing:border-box;transition:.15s ease;}' +
+        '.popup-opt:hover,.popup-opt:focus-visible{border-color:#167E3B;outline:none;}' +
+        '.popup-opt.sel{border-color:#167E3B;background:rgba(22,126,59,0.12);}' +
+        '.popup-opt.sel::before{border-color:#167E3B;background:#167E3B;box-shadow:inset 0 0 0 3px #141414;}' +
+        '#popup-voltar:hover{color:#FFFFFF;}' +
+        '#popup-enviar:hover{background:#1a9346;border-color:#1a9346;}' +
+      '</style>' +
       '<div data-fechar-popup aria-hidden="true" style="position:absolute;inset:0;cursor:pointer;"></div>' +
-      '<div class="tp-pop" style="position:relative;width:100%;max-width:440px;max-height:92vh;overflow:auto;background:#141414;border:1px solid rgba(255,255,255,0.14);border-radius:20px;padding:34px 32px;box-shadow:0 60px 100px -30px rgba(0,0,0,0.7);opacity:0;transform:translateY(28px) scale(0.96);transition:opacity .35s ease, transform .4s cubic-bezier(.16,.84,.44,1);">' +
-        '<button type="button" data-fechar-popup aria-label="Fechar formulário" style="position:absolute;top:16px;right:16px;width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.05);color:#FFFFFF;font-size:17px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;">&times;</button>' +
-        '<div style="display:flex;flex-direction:column;align-items:center;text-align:center;margin-bottom:22px;">' +
+      '<div class="tp-pop" style="position:relative;width:100%;max-width:460px;max-height:92vh;overflow:auto;background:#141414;border:1px solid rgba(255,255,255,0.14);border-radius:20px;padding:34px 32px;box-shadow:0 60px 100px -30px rgba(0,0,0,0.7);opacity:0;transform:translateY(28px) scale(0.96);transition:opacity .35s ease, transform .4s cubic-bezier(.16,.84,.44,1);font-family:\'Lexend Deca\',Helvetica,sans-serif;">' +
+        '<button type="button" data-fechar-popup aria-label="Fechar formulário" style="position:absolute;top:16px;right:16px;width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.05);color:#FFFFFF;font-size:17px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;z-index:2;">&times;</button>' +
+        '<div style="display:flex;flex-direction:column;align-items:center;text-align:center;margin-bottom:18px;">' +
           '<img src="uploads/logo-vieira-marques-sociedade-advogados.webp" alt="Vieira &amp; Marques Sociedade de Advogados" width="153" height="34" style="height:34px;width:auto;display:block;filter:invert(1);margin-bottom:10px;">' +
         '</div>' +
-        '<h2 id="tp-form-titulo" style="margin:0 0 8px;text-align:center;font-size:22px;font-weight:600;line-height:1.3;color:#FFFFFF;">Vamos conversar?</h2>' +
-        '<p id="popup-sub" style="margin:0 0 20px;text-align:center;font-size:14px;line-height:1.6;color:rgba(255,255,255,0.62);">Deixe seu nome e WhatsApp — a mensagem já vai pronta.</p>' +
-        '<form id="popup-form" style="display:flex;flex-direction:column;gap:13px;">' +
-          '<label style="display:flex;flex-direction:column;gap:7px;">' +
-            '<span style="font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.55);">Nome completo</span>' +
-            '<input id="input-nome" name="Nome" type="text" autocomplete="name" placeholder="Seu nome" required style="width:100%;padding:13px 15px;font-size:15px;color:#FFFFFF;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.16);border-radius:8px;outline:none;box-sizing:border-box;">' +
-          '</label>' +
-          '<label style="display:flex;flex-direction:column;gap:7px;">' +
-            '<span style="font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.55);">WhatsApp</span>' +
-            '<input id="input-tel" name="Tel" type="tel" autocomplete="tel" placeholder="(15) 90000-0000" required style="width:100%;padding:13px 15px;font-size:15px;color:#FFFFFF;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.16);border-radius:8px;outline:none;box-sizing:border-box;">' +
-          '</label>' +
-          '<fieldset style="border:0;margin:0;padding:0;display:flex;flex-direction:column;gap:9px;">' +
-            '<legend style="font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.55);padding:0;margin-bottom:2px;">Valor aproximado do prejuízo</legend>' +
-            '<label style="display:flex;align-items:center;gap:9px;font-size:14.5px;color:#EDEDED;cursor:pointer;">' +
-              '<input type="radio" name="faixa_valor" value="Acima de R$ 10.000" required style="accent-color:#167E3B;width:17px;height:17px;">' +
-              'Acima de R$ 10.000' +
+        '<h2 id="tp-form-titulo" style="margin:0 0 6px;text-align:center;font-size:21px;font-weight:600;line-height:1.3;color:#FFFFFF;">Vamos entender o seu caso</h2>' +
+        '<p style="margin:0 0 20px;text-align:center;font-size:13.5px;line-height:1.6;color:rgba(255,255,255,0.62);">Leva menos de um minuto — a mensagem já vai pronta.</p>' +
+
+        '<div id="popup-quiz">' +
+          '<div style="height:4px;border-radius:999px;background:rgba(255,255,255,0.08);overflow:hidden;">' +
+            '<div id="popup-bar" style="height:100%;width:0%;background:#167E3B;transition:width .3s ease;"></div>' +
+          '</div>' +
+          '<p id="popup-count" style="margin:8px 0 18px;font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.45);"></p>' +
+
+          '<div class="popup-step" data-key="tipo">' +
+            '<span style="display:block;margin:0 0 12px;font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.55);">Qual tipo de golpe você sofreu?</span>' +
+            '<div style="display:grid;gap:9px;">' +
+              '<button type="button" class="popup-opt">Pix enviado para golpista</button>' +
+              '<button type="button" class="popup-opt">Falsa venda de veículo</button>' +
+              '<button type="button" class="popup-opt">Empréstimo ou consignado que não contratei</button>' +
+              '<button type="button" class="popup-opt">Outra fraude bancária</button>' +
+            '</div>' +
+          '</div>' +
+
+          '<div class="popup-step" data-key="valor" style="display:none;">' +
+            '<span style="display:block;margin:0 0 12px;font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.55);">Valor aproximado do prejuízo</span>' +
+            '<div style="display:grid;gap:9px;">' +
+              '<button type="button" class="popup-opt">Até R$ 10.000</button>' +
+              '<button type="button" class="popup-opt">De R$ 10.000 a R$ 50.000</button>' +
+              '<button type="button" class="popup-opt">De R$ 50.000 a R$ 100.000</button>' +
+              '<button type="button" class="popup-opt">Acima de R$ 100.000</button>' +
+            '</div>' +
+          '</div>' +
+
+          '<div class="popup-step" data-key="quando" style="display:none;">' +
+            '<span style="display:block;margin:0 0 12px;font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.55);">Quando o golpe aconteceu?</span>' +
+            '<div style="display:grid;gap:9px;">' +
+              '<button type="button" class="popup-opt">Há menos de 30 dias</button>' +
+              '<button type="button" class="popup-opt">Entre 1 e 6 meses</button>' +
+              '<button type="button" class="popup-opt">Há mais de 6 meses</button>' +
+            '</div>' +
+          '</div>' +
+
+          '<div class="popup-step" data-key="como" style="display:none;">' +
+            '<span style="display:block;margin:0 0 12px;font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.55);">Como o golpe aconteceu?</span>' +
+            '<div style="display:grid;gap:9px;">' +
+              '<button type="button" class="popup-opt">Eu mesmo fiz a transferência, achando que era alguém de confiança</button>' +
+              '<button type="button" class="popup-opt">Movimentaram minha conta sem autorização</button>' +
+              '<button type="button" class="popup-opt">Fizeram um empréstimo em meu nome</button>' +
+              '<button type="button" class="popup-opt">Outro</button>' +
+            '</div>' +
+          '</div>' +
+
+          '<div class="popup-step" data-key="banco" style="display:none;">' +
+            '<span style="display:block;margin:0 0 12px;font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.55);">Você avisou o banco logo após perceber o golpe?</span>' +
+            '<div style="display:grid;gap:9px;">' +
+              '<button type="button" class="popup-opt">Sim</button>' +
+              '<button type="button" class="popup-opt" data-alert>Ainda não</button>' +
+            '</div>' +
+          '</div>' +
+
+          '<div class="popup-step" data-key="_aviso" data-skip-count style="display:none;">' +
+            '<div style="margin:0 0 16px;padding:14px 16px;background:rgba(191,140,60,0.14);border:1px solid rgba(191,140,60,0.34);border-radius:10px;font-size:13.5px;line-height:1.55;color:#FFD9A0;">' +
+              '<strong>Importante:</strong> ligue para o seu banco assim que puder e peça a contestação pelo <strong>MED (Mecanismo Especial de Devolução do Pix)</strong>. O prazo é curto. Enquanto isso, continue aqui para falar com a nossa equipe.' +
+            '</div>' +
+            '<div style="display:grid;gap:9px;"><button type="button" class="popup-opt" data-continue>Entendi, continuar</button></div>' +
+          '</div>' +
+
+          '<div class="popup-step" data-key="bo" style="display:none;">' +
+            '<span style="display:block;margin:0 0 12px;font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.55);">Foi registrado boletim de ocorrência?</span>' +
+            '<div style="display:grid;gap:9px;">' +
+              '<button type="button" class="popup-opt">Sim</button>' +
+              '<button type="button" class="popup-opt">Ainda não</button>' +
+            '</div>' +
+          '</div>' +
+
+          '<div class="popup-step" data-key="provas" style="display:none;">' +
+            '<span style="display:block;margin:0 0 12px;font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.55);">Você ainda tem os comprovantes e as conversas do golpe?</span>' +
+            '<div style="display:grid;gap:9px;">' +
+              '<button type="button" class="popup-opt">Sim, tenho tudo</button>' +
+              '<button type="button" class="popup-opt">Tenho só uma parte</button>' +
+              '<button type="button" class="popup-opt">Não tenho</button>' +
+            '</div>' +
+          '</div>' +
+
+          '<div class="popup-step" data-key="_contato" style="display:none;">' +
+            '<label style="display:flex;flex-direction:column;gap:7px;margin-bottom:13px;">' +
+              '<span style="font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.55);">Nome completo</span>' +
+              '<input id="input-nome" type="text" autocomplete="name" placeholder="Seu nome" style="width:100%;padding:13px 15px;font-size:15px;color:#FFFFFF;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.16);border-radius:8px;outline:none;box-sizing:border-box;font-family:inherit;">' +
             '</label>' +
-            '<label style="display:flex;align-items:center;gap:9px;font-size:14.5px;color:#EDEDED;cursor:pointer;">' +
-              '<input type="radio" name="faixa_valor" value="Até R$ 10.000" required style="accent-color:#167E3B;width:17px;height:17px;">' +
-              'Até R$ 10.000' +
+            '<label style="display:flex;flex-direction:column;gap:7px;">' +
+              '<span style="font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.55);">WhatsApp</span>' +
+              '<input id="input-tel" type="tel" inputmode="tel" autocomplete="tel" placeholder="(15) 90000-0000" style="width:100%;padding:13px 15px;font-size:15px;color:#FFFFFF;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.16);border-radius:8px;outline:none;box-sizing:border-box;font-family:inherit;">' +
             '</label>' +
-          '</fieldset>' +
-          '<p id="popup-erro" role="alert" style="display:none;margin:0;font-size:13px;line-height:1.5;color:#FFB4A8;background:rgba(191,60,60,0.16);border:1px solid rgba(191,60,60,0.36);border-radius:8px;padding:10px 12px;"></p>' +
-          '<button type="submit" style="display:inline-flex;align-items:center;justify-content:center;gap:10px;width:100%;margin-top:6px;padding:16px 22px;border-radius:999px;font-weight:600;font-size:15px;background:#167E3B;color:#FFFFFF;border:1px solid #167E3B;cursor:pointer;">Continuar no WhatsApp</button>' +
-          '<p style="margin:4px 0 0;text-align:center;font-size:11.5px;line-height:1.5;color:rgba(255,255,255,0.5);">Seus dados são sigilosos. Nada de spam.</p>' +
-        '</form>' +
+            '<p id="popup-erro" role="alert" style="display:none;margin:13px 0 0;font-size:13px;line-height:1.5;color:#FFB4A8;background:rgba(191,60,60,0.16);border:1px solid rgba(191,60,60,0.36);border-radius:8px;padding:10px 12px;"></p>' +
+            '<button type="button" id="popup-enviar" style="display:inline-flex;align-items:center;justify-content:center;gap:10px;width:100%;margin-top:16px;padding:16px 22px;border-radius:999px;font-weight:600;font-size:15px;background:#167E3B;color:#FFFFFF;border:1px solid #167E3B;cursor:pointer;font-family:inherit;">Continuar no WhatsApp</button>' +
+          '</div>' +
+
+          '<button type="button" id="popup-voltar" style="display:none;margin:16px auto 0;padding:4px 0;background:none;border:0;color:rgba(255,255,255,0.5);font-size:13px;cursor:pointer;font-family:inherit;">&larr; Voltar</button>' +
+        '</div>' +
+
         '<div id="popup-bloqueio" style="display:none;flex-direction:column;align-items:center;text-align:center;gap:14px;">' +
           '<p style="margin:0;font-size:15px;line-height:1.6;color:#EDEDED;">No momento, atendemos exclusivamente casos com prejuízo <strong>acima de R$ 10.000</strong>.</p>' +
           '<button type="button" id="popup-bloqueio-fechar" style="display:inline-flex;align-items:center;justify-content:center;width:100%;margin-top:6px;padding:16px 22px;border-radius:999px;font-weight:600;font-size:15px;background:rgba(255,255,255,0.08);color:#FFFFFF;border:1px solid rgba(255,255,255,0.18);cursor:pointer;">Entendi</button>' +
         '</div>' +
+
+        '<p style="margin:18px 0 0;text-align:center;font-size:11.5px;line-height:1.5;color:rgba(255,255,255,0.5);">Seus dados são sigilosos. Nada de spam.</p>' +
       '</div>';
     document.body.appendChild(veil);
     return veil;
+  }
+
+  function quizIdx(key) {
+    for (var i = 0; i < quizSteps.length; i++) if (quizSteps[i].dataset.key === key) return i;
+    return -1;
+  }
+
+  function quizShow(i) {
+    quizSteps.forEach(function (s, j) { s.style.display = j === i ? "block" : "none"; });
+    quizCur = i;
+    var s = quizSteps[i];
+    if (!s.hasAttribute("data-skip-count")) {
+      var n = quizCounted.indexOf(s) + 1;
+      popupEls.bar.style.width = (n / quizCounted.length * 100) + "%";
+      popupEls.count.textContent = "Etapa " + n + " de " + quizCounted.length;
+    }
+    popupEls.voltar.style.display = quizHist.length === 0 ? "none" : "block";
+  }
+
+  function quizGo(i) {
+    quizHist.push(quizCur);
+    quizShow(i);
+  }
+
+  function quizReset() {
+    quizAnswers = {};
+    quizHist = [];
+    popupEls.quiz.querySelectorAll(".popup-opt.sel").forEach(function (b) { b.classList.remove("sel"); });
+    popupEls.erro.style.display = "none";
+    popupEls.inputNome.value = "";
+    popupEls.inputTel.value = "";
+    quizShow(0);
   }
 
   function ajustarPopupViewport() {
@@ -195,12 +312,10 @@
     popupEls.veil.style.height = vv.height + "px";
   }
 
-  function abrirPopupComMsg(msg) {
+  function abrirPopup() {
     popupState.open = true;
-    popupState.pendingMsg = msg || MENSAGEM_FIXA;
-    popupEls.erro.style.display = "none";
-    popupEls.form.reset();
-    popupEls.form.style.display = "flex";
+    quizReset();
+    popupEls.quiz.style.display = "block";
     popupEls.bloqueio.style.display = "none";
     clearTimeout(popupEls._timer);
     clearTimeout(popupEls._fallbackTimer);
@@ -259,10 +374,11 @@
     if (!SHEET_ENDPOINT) return;
     var utm = {};
     try { utm = JSON.parse(sessionStorage.getItem("lead_utm") || "{}"); } catch (err) {}
-    var origemForm = faixaValor === "Até R$ 10.000" ? "popup_bloqueado_abaixo_10k" : "popup";
     var dados = Object.assign({
       nome: nome, whatsapp: tel, faixa_valor: faixaValor,
-      mensagem: popupState.pendingMsg || "", origem_form: origemForm, pagina: window.location.href
+      mensagem: popupState.pendingMsg || "", origem_form: "popup_quiz", pagina: window.location.href,
+      tipo_golpe: quizAnswers.tipo || "", quando: quizAnswers.quando || "", como: quizAnswers.como || "",
+      avisou_banco: quizAnswers.banco || "", boletim_ocorrencia: quizAnswers.bo || "", provas: quizAnswers.provas || ""
     }, utm);
     // Dispara os 3 mecanismos sempre, sem depender de um só - o retorno de
     // sendBeacon() só confirma que o navegador aceitou enfileirar o envio,
@@ -286,33 +402,30 @@
     }
   }
 
-  function enviarPopup(e) {
-    e.preventDefault();
+  function enviarQuiz() {
     var nome = popupEls.inputNome.value.trim();
     var tel = popupEls.inputTel.value.trim();
-    var faixaEl = popupEls.form.querySelector('input[name="faixa_valor"]:checked');
-    if (!nome || !tel || !faixaEl) {
-      popupEls.erro.textContent = "Preciso do seu nome, WhatsApp e do valor aproximado do prejuízo para continuar.";
+    if (nome.length < 2 || tel.replace(/\D/g, "").length < 10) {
+      popupEls.erro.textContent = "Preciso do seu nome e de um WhatsApp com DDD para continuar.";
       popupEls.erro.style.display = "block";
       return;
     }
-    var faixaValor = faixaEl.value;
+    popupEls.erro.style.display = "none";
 
-    // Defesa: na prática o formulário já some assim que "Até R$ 10.000" é
-    // selecionado (ver listener de "change" abaixo), então isso normalmente
-    // nem chega a rodar. Se rodar mesmo assim, desqualifica sem enviar nada
-    // pra planilha - não é um lead atendido, não há motivo pra registrar.
-    if (faixaValor === "Até R$ 10.000") {
-      popupEls.form.style.display = "none";
-      popupEls.bloqueio.style.display = "flex";
-      return;
-    }
-
-    var msg = popupState.pendingMsg + " (Prejuízo estimado: " + faixaValor + ")";
+    var faixaValor = quizAnswers.valor || "";
+    var msg = "Olá, sou " + nome + ". Vim pela página de Golpe do Pix e quero uma análise do meu caso." +
+      "\n\n• Tipo de golpe: " + (quizAnswers.tipo || "-") +
+      "\n• Prejuízo aproximado: " + (faixaValor || "-") +
+      "\n• Quando aconteceu: " + (quizAnswers.quando || "-") +
+      "\n• Como aconteceu: " + (quizAnswers.como || "-") +
+      "\n• Avisei o banco: " + (quizAnswers.banco || "-") +
+      "\n• Boletim de ocorrência: " + (quizAnswers.bo || "-") +
+      "\n• Comprovantes e conversas: " + (quizAnswers.provas || "-");
     var url = "https://wa.me/" + WA_PHONE + "?text=" + encodeURIComponent(msg);
 
-    // Planilha via sendBeacon: independe do GTM e sobrevive a qualquer
-    // navegação que vier a seguir.
+    popupState.pendingMsg = msg;
+    // Planilha via sendBeacon (+Image+fetch): independe do GTM e sobrevive a
+    // qualquer navegação que vier a seguir.
     enviarPlanilha(nome, tel, faixaValor);
     try { sessionStorage.setItem("popup_lead_enviado", "1"); } catch (err) {}
 
@@ -343,7 +456,7 @@
       eventCallback: seguirParaWhatsapp,
       eventTimeout: 1500
     });
-    window.dataLayer.push({ event: "whatsapp_click", link_url: url, link_text: "Popup: " + faixaValor });
+    window.dataLayer.push({ event: "whatsapp_click", link_url: url, link_text: "Popup quiz: " + faixaValor });
 
     // Rede de segurança: se o GTM não carregar (bloqueador de anúncios, falha
     // de rede), o eventCallback acima nunca dispara sozinho - isso garante
@@ -357,43 +470,71 @@
     var veil = criarPopup();
     popupEls.veil = veil;
     popupEls.pop = veil.querySelector(".tp-pop");
-    popupEls.form = document.getElementById("popup-form");
+    popupEls.quiz = document.getElementById("popup-quiz");
+    popupEls.bloqueio = document.getElementById("popup-bloqueio");
+    popupEls.bar = document.getElementById("popup-bar");
+    popupEls.count = document.getElementById("popup-count");
+    popupEls.voltar = document.getElementById("popup-voltar");
     popupEls.erro = document.getElementById("popup-erro");
     popupEls.inputNome = document.getElementById("input-nome");
     popupEls.inputTel = document.getElementById("input-tel");
-    popupEls.bloqueio = document.getElementById("popup-bloqueio");
+    popupEls.enviar = document.getElementById("popup-enviar");
+
+    quizSteps = [].slice.call(popupEls.quiz.querySelectorAll(".popup-step"));
+    quizCounted = quizSteps.filter(function (s) { return !s.hasAttribute("data-skip-count"); });
 
     veil.querySelectorAll("[data-fechar-popup]").forEach(function (el) {
       el.addEventListener("click", fecharPopup);
     });
     document.getElementById("popup-bloqueio-fechar").addEventListener("click", fecharPopup);
-    popupEls.form.addEventListener("submit", enviarPopup);
-    popupEls.form.querySelectorAll('input[name="faixa_valor"]').forEach(function (radio) {
-      radio.addEventListener("change", function () {
+
+    popupEls.quiz.addEventListener("click", function (e) {
+      var b = e.target.closest(".popup-opt");
+      if (!b) return;
+      var step = b.closest(".popup-step");
+      var key = step.dataset.key;
+
+      if (b.hasAttribute("data-continue")) { quizGo(quizIdx("bo")); return; }
+
+      step.querySelectorAll(".popup-opt").forEach(function (o) { o.classList.toggle("sel", o === b); });
+      quizAnswers[key] = b.textContent.trim();
+
+      if (key === "valor" && quizAnswers.valor === "Até R$ 10.000") {
         // Desqualifica na hora, antes mesmo de nome/WhatsApp serem
         // preenchidos - não chega a coletar dado nenhum de quem está abaixo
         // de R$ 10.000, então não há nada pra enviar pra planilha aqui.
-        if (radio.value === "Até R$ 10.000" && radio.checked) {
-          popupEls.form.style.display = "none";
+        setTimeout(function () {
+          popupEls.quiz.style.display = "none";
           popupEls.bloqueio.style.display = "flex";
-        }
-      });
+        }, 180);
+        return;
+      }
+
+      setTimeout(function () {
+        if (b.hasAttribute("data-alert")) quizGo(quizIdx("_aviso"));
+        else if (key === "banco") quizGo(quizIdx("bo"));
+        else quizGo(quizCur + 1);
+      }, 180);
+    });
+    popupEls.voltar.addEventListener("click", function () {
+      if (quizHist.length) quizShow(quizHist.pop());
+    });
+    popupEls.enviar.addEventListener("click", enviarQuiz);
+    popupEls.inputTel.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") { e.preventDefault(); enviarQuiz(); }
     });
 
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape" && popupState.open) fecharPopup();
     });
 
-    // Toda CTA de WhatsApp da página abre o popup de qualificação em vez de
-    // ir direto pro WhatsApp - a mensagem original do link vira o texto
-    // pré-preenchido, só ganha a faixa de valor depois.
+    // Toda CTA de WhatsApp da página abre o quiz de qualificação em vez de
+    // ir direto pro WhatsApp.
     document.addEventListener("click", function (e) {
       var link = e.target.closest('a[href^="https://wa.me/"]');
       if (!link) return;
       e.preventDefault();
-      var url = new URL(link.href);
-      var msg = url.searchParams.get("text") || MENSAGEM_FIXA;
-      abrirPopupComMsg(msg);
+      abrirPopup();
     });
 
     capturarUtm();
