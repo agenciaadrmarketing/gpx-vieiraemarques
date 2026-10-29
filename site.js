@@ -182,12 +182,13 @@
           '</div>' +
 
           '<div class="popup-step" data-key="valor" style="display:none;">' +
-            '<span style="display:block;margin:0 0 12px;font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.55);">Valor aproximado do prejuízo</span>' +
+            '<span style="display:block;margin:0 0 4px;font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.55);">Valor aproximado do prejuízo</span>' +
+            '<span style="display:block;margin:0 0 12px;font-size:13px;font-weight:300;color:rgba(255,255,255,0.5);">Some tudo o que foi perdido no golpe.</span>' +
             '<div style="display:grid;gap:9px;">' +
-              '<button type="button" class="popup-opt">Até R$ 10.000</button>' +
-              '<button type="button" class="popup-opt">De R$ 10.000 a R$ 50.000</button>' +
-              '<button type="button" class="popup-opt">De R$ 50.000 a R$ 100.000</button>' +
-              '<button type="button" class="popup-opt">Acima de R$ 100.000</button>' +
+              '<button type="button" class="popup-opt">Menos de 10 mil reais</button>' +
+              '<button type="button" class="popup-opt">Entre 10 mil e 50 mil reais</button>' +
+              '<button type="button" class="popup-opt">Entre 50 mil e 100 mil reais</button>' +
+              '<button type="button" class="popup-opt">Mais de 100 mil reais</button>' +
             '</div>' +
           '</div>' +
 
@@ -499,7 +500,7 @@
       step.querySelectorAll(".popup-opt").forEach(function (o) { o.classList.toggle("sel", o === b); });
       quizAnswers[key] = b.textContent.trim();
 
-      if (key === "valor" && quizAnswers.valor === "Até R$ 10.000") {
+      if (key === "valor" && quizAnswers.valor === "Menos de 10 mil reais") {
         // Desqualifica na hora, antes mesmo de nome/WhatsApp serem
         // preenchidos - não chega a coletar dado nenhum de quem está abaixo
         // de R$ 10.000, então não há nada pra enviar pra planilha aqui.
