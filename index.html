@@ -156,6 +156,26 @@ h1, h2, h3 { font-weight: 600; line-height: 1.22; margin: 0; letter-spacing: -.0
 .qz__stop { text-align: center; padding: 18px 4px 6px; }
 .qz__stop p { color: rgba(255,255,255,.75); }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+/* Avaliações em texto (publicadas por clientes no Google) */
+.revs { list-style: none; margin: 16px 0 0; padding: 0; display: grid; gap: 12px; }
+.rev { padding: 18px; border: 1px solid rgba(0,0,0,.1); border-radius: 14px; background: #fff; }
+.rev__t { margin: 0 0 10px; font-size: 15px; color: #333; }
+.rev__n { margin: 0; font-size: 13px; color: var(--mute-dark); }
+.rev__n b { color: var(--ink-dark); font-weight: 600; }
+@media (min-width: 860px) { .revs { grid-template-columns: repeat(3, 1fr); } }
+/* Celular: textos centralizados */
+@media (max-width: 859px) {
+  .hero__grid, .sec .wrap, .foot { text-align: center; }
+  .hero__lead, .sec__lead, .foot p { margin-left: auto; margin-right: auto; }
+  .trust { justify-content: center; }
+  .step { grid-template-columns: 1fr; justify-items: center; gap: 10px; }
+  .who { justify-items: center; }
+  .who ul { list-style: none; padding-left: 0; }
+  .who li { margin-bottom: 10px; }
+  .who li::before { content: ""; display: block; width: 6px; height: 6px; margin: 0 auto 6px; border-radius: 50%; background: var(--green2); }
+  .rating { justify-items: center; }
+  .faq summary { padding: 18px 34px; }
+}
 </style>
 </head>
 <body>
@@ -233,6 +253,11 @@ h1, h2, h3 { font-weight: 600; line-height: 1.22; margin: 0; letter-spacing: -.0
           <a href="https://search.google.com/local/reviews?placeid=ChIJL36YRqjjxZQR4GRhe3Bl5M8" target="_blank" rel="noopener">Ler as avaliações no Google</a>
         </div>
       </div>
+      <ul class="revs">
+        <li class="rev"><p class="rev__t">“Deixo aqui a minha satisfação com os serviços prestados junto ao escritório, em especial ao Dr Oscar que além de competente, traz clareza aos processos e sendo muito paciente sobre as dúvidas e orientações.”</p><p class="rev__n"><b>Viviane Bezerra</b> · Avaliação no Google</p></li>
+        <li class="rev"><p class="rev__t">“Fui muito bem atendida. O advogado exige tudo que eu preciso fazer. Deixou eu me expressar, foi um ótimo ouvinte. Recomendo para todos que estão precisando desse tipo de serviço.”</p><p class="rev__n"><b>Eliane Ferrari</b> · Avaliação no Google</p></li>
+        <li class="rev"><p class="rev__t">“Gostaria de agradecer pelo excelente trabalho e profissionalismo. Sua dedicação, competência e atenção fizeram toda a diferença. É gratificante contar com um advogado tão comprometido e eficiente.”</p><p class="rev__n"><b>Thaís Pontes</b> · Avaliação no Google</p></li>
+      </ul>
     </div>
   </section>
 
