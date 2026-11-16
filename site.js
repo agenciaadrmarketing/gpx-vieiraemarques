@@ -29,11 +29,13 @@
   var resp = {};
   var atual = 0;
   var el = {};
+  var trava = false;          // impede que um toque duplo pule a etapa do valor
+  var etapasMarcadas = {};    // cada etapa é medida uma vez por abertura do quiz
 
   // ---------- medição ----------
   function dl(obj) { window.dataLayer = window.dataLayer || []; window.dataLayer.push(obj); }
   function cl(nome) { try { if (typeof window.clarity === "function") window.clarity("event", nome); } catch (e) {} }
-  function marcarEtapa(n) { dl({ event: "quiz_etapa", etapa: n }); cl("quiz_etapa_" + n); }
+  function marcarEtapa(n) { if (etapasMarcadas[n]) return; etapasMarcadas[n] = 1; dl({ event: "quiz_etapa", etapa: n }); cl("quiz_etapa_" + n); }
 
   // ---------- recusa definitiva ----------
   function recusado() { try { return localStorage.getItem(CHAVE_RECUSA) === "1"; } catch (e) { return false; } }
@@ -61,7 +63,7 @@
     document.body.style.overflow = "hidden";
     if (recusado()) { mostrarRecusa(false); return; }
     el.flow.hidden = false; el.stop.hidden = true;
-    resp = {}; atual = 0; render();
+    resp = {}; atual = 0; etapasMarcadas = {}; render();
   }
   function fechar() { el.qz.classList.remove("open"); document.body.style.overflow = ""; }
 
@@ -72,6 +74,7 @@
 
   // ---------- etapas ----------
   function render() {
+    trava = false;
     var e = ETAPAS[atual];
     var n = atual + 1;
     el.bar.style.width = Math.round(n / ETAPAS.length * 100) + "%";
@@ -146,6 +149,7 @@
   };
 
   function enviar() {
+    if (!resp.valorNum || resp.valorNum < MINIMO || !resp.banco) { atual = 1; render(); return; }
     var nome = document.getElementById("input-nome").value.trim();
     var tel = document.getElementById("input-tel").value.trim();
     resp.nome = nome; resp.tel = tel;
@@ -198,6 +202,8 @@
       if (ev.target === el.qz) { fechar(); return; }
       var o = ev.target.closest(".opt");
       if (o && el.qz.contains(o)) {
+        if (trava) return;
+        trava = true;
         var e = ETAPAS[atual];
         resp[e.key] = o.textContent.trim();
         el.step.querySelectorAll(".opt").forEach(function (x) { x.classList.toggle("sel", x === o); });
