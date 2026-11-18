@@ -1,7 +1,8 @@
 /* LP Golpe do Pix — Vieira & Marques (versão 12/11/2026)
  * Quiz de qualificação em 6 etapas. Todo botão da página abre o quiz; nenhum
  * leva direto ao WhatsApp. Valor digitado em R$ + banco na mesma tela; abaixo
- * de R$ 10.000 = recusa definitiva, gravada no aparelho (localStorage).
+ * de R$ 10.000 = recusa definitiva: a página inteira fica bloqueada neste
+ * aparelho (localStorage + cookie de 1 ano; ?liberar=1 na URL desfaz, para testes).
  * Medição: dataLayer + Clarity por etapa ('quiz_etapa'), recusa
  * ('quiz_recusado') e envio ('lead_form_submitted', usado pela conversão do
  * Google Ads no GTM). Planilha (Apps Script → Kommo) igual à versão anterior.
@@ -38,8 +39,20 @@
   function marcarEtapa(n) { if (etapasMarcadas[n]) return; etapasMarcadas[n] = 1; dl({ event: "quiz_etapa", etapa: n }); cl("quiz_etapa_" + n); }
 
   // ---------- recusa definitiva ----------
-  function recusado() { try { return localStorage.getItem(CHAVE_RECUSA) === "1"; } catch (e) { return false; } }
-  function gravarRecusa() { try { localStorage.setItem(CHAVE_RECUSA, "1"); } catch (e) {} }
+  function recusado() {
+    try { if (localStorage.getItem(CHAVE_RECUSA) === "1") return true; } catch (e) {}
+    try { return /(?:^|; )gpx_recusado=1/.test(document.cookie); } catch (e) { return false; }
+  }
+  function gravarRecusa() {
+    try { localStorage.setItem(CHAVE_RECUSA, "1"); } catch (e) {}
+    try { document.cookie = CHAVE_RECUSA + "=1; max-age=31536000; path=/; SameSite=Lax"; } catch (e) {}
+  }
+  // Bloqueia a página inteira: some tudo e fica só a mensagem de recusa.
+  function bloquearPagina() {
+    fechar();
+    document.documentElement.classList.add("is-lock");
+    window.scrollTo(0, 0);
+  }
 
   // ---------- utilidades ----------
   function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
@@ -59,17 +72,16 @@
 
   // ---------- abrir / fechar ----------
   function abrir() {
+    if (recusado()) { bloquearPagina(); return; }
     el.qz.classList.add("open");
     document.body.style.overflow = "hidden";
-    if (recusado()) { mostrarRecusa(false); return; }
-    el.flow.hidden = false; el.stop.hidden = true;
     resp = {}; atual = 0; etapasMarcadas = {}; render();
   }
   function fechar() { el.qz.classList.remove("open"); document.body.style.overflow = ""; }
 
   function mostrarRecusa(registrar) {
-    el.flow.hidden = true; el.stop.hidden = false;
     if (registrar) { gravarRecusa(); dl({ event: "quiz_recusado" }); cl("quiz_recusado"); }
+    bloquearPagina();
   }
 
   // ---------- etapas ----------
@@ -187,8 +199,6 @@
   // ---------- inicialização ----------
   function init() {
     el.qz = document.getElementById("qz");
-    el.flow = document.getElementById("qz-flow");
-    el.stop = document.getElementById("qz-stop");
     el.step = document.getElementById("qz-step");
     el.bar = document.getElementById("qz-bar");
     el.count = document.getElementById("qz-count");
