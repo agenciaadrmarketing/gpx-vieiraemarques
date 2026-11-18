@@ -1,4 +1,4 @@
-/* LP Golpe do Pix — Vieira & Marques (versão 12/11/2026)
+/* LP Golpe do Pix — Vieira & Marques (versão 18/11/2026)
  * Quiz de qualificação em 6 etapas. Todo botão da página abre o quiz; nenhum
  * leva direto ao WhatsApp. Valor digitado em R$ + banco na mesma tela; abaixo
  * de R$ 10.000 = recusa definitiva: a página inteira fica bloqueada neste
