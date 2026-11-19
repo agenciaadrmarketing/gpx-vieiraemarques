@@ -13,7 +13,8 @@
 try{if(/[?&]liberar=1(&|$)/.test(location.search)){try{localStorage.removeItem(k)}catch(e){}document.cookie=k+'=; max-age=0; path=/';}}catch(e){}
 try{b=localStorage.getItem(k)==='1'}catch(e){}
 if(!b){try{b=/(?:^|; )gpx_recusado=1/.test(document.cookie)}catch(e){}}
-if(b){window.__gpxLock=true;document.documentElement.className+=' is-lock';}})();
+if(b){window.__gpxLock=true;document.documentElement.className+=' is-lock';}
+else if('IntersectionObserver' in window){var h=document.documentElement;h.classList.add('js');setTimeout(function(){if(!window.__gpxRev)h.classList.remove('js');},4000);}})();
 </script>
 <script>if(!window.__gpxLock)(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-WP9XSL6K');</script>
 <title>Advogado Golpe do Pix e Fraude Bancária | Vieira &amp; Marques</title>
@@ -74,9 +75,11 @@ img { max-width: 100%; height: auto; display: block; }
 .wrap { width: 100%; max-width: 1080px; margin: 0 auto; padding: 0 20px; }
 .kicker { font-size: 11.5px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--mute); margin: 0 0 12px; }
 h1, h2, h3 { font-weight: 600; line-height: 1.22; margin: 0; letter-spacing: -.01em; }
-.btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 54px; padding: 0 26px; border-radius: 12px; border: 1px solid var(--green); background: var(--green); color: #fff; font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; text-decoration: none; transition: background .15s ease; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 54px; padding: 0 26px; border-radius: 12px; border: 1px solid var(--green); background: var(--green); color: #fff; font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; text-decoration: none; transition: background-color .2s ease, border-color .2s ease, transform .2s ease; }
 .btn:hover, .btn:focus-visible { background: var(--green2); border-color: var(--green2); outline: none; }
-.btn svg { flex: 0 0 auto; }
+.btn svg { flex: 0 0 auto; transition: transform .2s ease; }
+.btn:hover svg { transform: translateX(3px); }
+.btn:active { transform: scale(.98); }
 /* Primeira tela: tudo o que decide o clique cabe na tela do celular */
 .hero { position: relative; isolation: isolate; overflow: hidden; padding: 18px 0 34px; border-bottom: 1px solid var(--line); background: var(--bg); }
 /* A foto é o fundo da primeira tela, ancorada na direita, o lado da vítima. O degradê só existe onde há texto; o resto da foto fica limpo */
@@ -167,7 +170,7 @@ html.is-lock .lock { display: flex; flex-direction: column; align-items: center;
 .qz__q { font-size: 18px; font-weight: 600; margin: 0 0 14px; line-height: 1.35; }
 .qz__hint { font-size: 13px; color: rgba(255,255,255,.55); margin: -8px 0 14px; }
 .qz__opts { display: grid; gap: 9px; }
-.opt { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 14px 15px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.16); border-radius: 10px; color: #EDEDED; font: inherit; font-size: 15px; line-height: 1.4; cursor: pointer; }
+.opt { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 14px 15px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.16); border-radius: 10px; color: #EDEDED; font: inherit; font-size: 15px; line-height: 1.4; cursor: pointer; transition: border-color .2s ease, background-color .2s ease; }
 .opt::before { content: ''; flex: 0 0 17px; height: 17px; border-radius: 50%; border: 2px solid rgba(255,255,255,.35); }
 .opt:hover, .opt:focus-visible { border-color: var(--green); outline: none; }
 .opt.sel { border-color: var(--green); background: rgba(22,126,59,.12); }
@@ -185,7 +188,35 @@ html.is-lock .lock { display: flex; flex-direction: column; align-items: center;
 .qz__nav .btn { flex: 1; }
 .qz__back { background: none; border: 0; color: rgba(255,255,255,.6); font: inherit; font-size: 14px; cursor: pointer; padding: 10px 4px; }
 .qz__note { font-size: 12px; color: rgba(255,255,255,.5); margin: 14px 0 0; text-align: center; }
-@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+/* Movimento. Tempos e curvas do site principal do escritório (entrada da primeira tela e revelação ao rolar). Só opacidade e transform: nada muda de lugar no layout */
+@keyframes lp-in { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: none; } }
+@keyframes lp-zoom { from { transform: scale(1.08); } to { transform: scale(1); } }
+@keyframes lp-fade { from { opacity: 0; } to { opacity: 1; } }
+.hero__bg img { transform-origin: 100% 0; animation: lp-zoom 1.5s cubic-bezier(.22,.7,.2,1) backwards; }
+.hero__grid > div > * { animation: lp-in .7s cubic-bezier(.22,.7,.2,1) backwards; }
+.hero__grid > div > :nth-child(2) { animation-delay: .1s; }
+.hero__grid > div > :nth-child(3) { animation-delay: .2s; }
+.hero__grid > div > :nth-child(4) { animation-delay: .3s; }
+.hero__grid > div > :nth-child(5) { animation-delay: .4s; }
+.js [data-reveal] { opacity: 0; transform: translateY(28px); transition: opacity .9s cubic-bezier(.16,1,.3,1), transform 1s cubic-bezier(.16,1,.3,1); }
+.js [data-reveal].is-visible { opacity: 1; transform: none; }
+/* Depois de revelado (data-revealed), cada item volta às próprias transições (ex.: o botão do fim da página) */
+.js [data-reveal-stagger]:not([data-revealed]) > * { opacity: 0; transform: translateY(22px); transition: opacity .7s cubic-bezier(.16,1,.3,1), transform .8s cubic-bezier(.16,1,.3,1); transition-delay: calc(var(--i, 0) * 70ms); }
+.js [data-reveal-stagger].is-visible:not([data-revealed]) > * { opacity: 1; transform: none; }
+[data-reveal-stagger] > :nth-child(2) { --i: 1; }
+[data-reveal-stagger] > :nth-child(3) { --i: 2; }
+[data-reveal-stagger] > :nth-child(4) { --i: 3; }
+[data-reveal-stagger] > :nth-child(5) { --i: 4; }
+[data-reveal-stagger] > :nth-child(6) { --i: 5; }
+[data-reveal-stagger] > :nth-child(7) { --i: 6; }
+[data-reveal-stagger] > :nth-child(8) { --i: 7; }
+.qz.open { animation: lp-fade .2s ease backwards; }
+.qz.open .qz__box { animation: lp-in .3s cubic-bezier(.22,.7,.2,1) backwards; }
+#qz-step > *, .faq details[open] > p, html.is-lock .lock { animation: lp-fade .3s ease backwards; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+  .js [data-reveal], .js [data-reveal-stagger]:not([data-revealed]) > * { opacity: 1; transform: none; }
+}
 /* Avaliações em texto (publicadas por clientes no Google) */
 .revs { list-style: none; margin: 16px 0 0; padding: 0; display: grid; gap: 12px; }
 .rev { padding: 18px; border: 1px solid rgba(0,0,0,.1); border-radius: 14px; background: #fff; }
@@ -247,10 +278,10 @@ html.is-lock .lock { display: flex; flex-direction: column; align-items: center;
 <main>
   <section class="sec sec--light" id="como-funciona" aria-labelledby="t-como">
     <div class="wrap">
-      <p class="kicker">Como funciona</p>
-      <h2 id="t-como">Do primeiro contato à análise do seu caso</h2>
-      <p class="sec__lead">Três passos, sem você precisar repetir a história.</p>
-      <ol class="steps">
+      <p class="kicker" data-reveal>Como funciona</p>
+      <h2 id="t-como" data-reveal>Do primeiro contato à análise do seu caso</h2>
+      <p class="sec__lead" data-reveal>Três passos, sem você precisar repetir a história.</p>
+      <ol class="steps" data-reveal-stagger>
         <li class="step"><span class="step__n">1</span><div><h3>Responda algumas perguntas</h3><p>Tipo de golpe, valor e quando aconteceu. Leva menos de um minuto e é sigiloso.</p></div></li>
         <li class="step"><span class="step__n">2</span><div><h3>Fale com a equipe no WhatsApp</h3><p>Sua mensagem já chega pronta, com as respostas.</p></div></li>
         <li class="step"><span class="step__n">3</span><div><h3>Receba a orientação</h3><p>A equipe verifica prazos e documentos e explica qual caminho é possível no seu caso.</p></div></li>
@@ -260,8 +291,8 @@ html.is-lock .lock { display: flex; flex-direction: column; align-items: center;
 
   <section class="sec" id="banco" aria-labelledby="t-banco">
     <div class="wrap who">
-      <img src="uploads/dr-oscar-vieira-advogado-consumidor-600.webp" alt="Dr. Oscar Vieira, advogado da Vieira &amp; Marques" width="600" height="750" loading="lazy" decoding="async">
-      <div>
+      <img src="uploads/dr-oscar-vieira-advogado-consumidor-600.webp" alt="Dr. Oscar Vieira, advogado da Vieira &amp; Marques" width="600" height="750" loading="lazy" decoding="async" data-reveal>
+      <div data-reveal>
         <p class="kicker">Responsabilidade do banco</p>
         <h2 id="t-banco">Você fez o Pix enganado. O banco pode responder?</h2>
         <p class="sec__lead">Pode, dependendo do caso. O Superior Tribunal de Justiça entende que os bancos respondem por fraudes ligadas às suas operações (Súmula 479). O que decide é como agiram o banco de quem pagou e o banco de quem recebeu o dinheiro.</p>
@@ -277,9 +308,9 @@ html.is-lock .lock { display: flex; flex-direction: column; align-items: center;
 
   <section class="sec sec--light" id="avaliacoes" aria-labelledby="t-aval">
     <div class="wrap">
-      <p class="kicker">Avaliações</p>
-      <h2 id="t-aval">O que os clientes dizem no Google</h2>
-      <div class="rating" style="margin-top:22px">
+      <p class="kicker" data-reveal>Avaliações</p>
+      <h2 id="t-aval" data-reveal>O que os clientes dizem no Google</h2>
+      <div class="rating" style="margin-top:22px" data-reveal>
         <div>
           <div class="rating__num">5,0</div>
           <div class="rating__stars" aria-label="5 de 5 estrelas">★★★★★</div>
@@ -289,7 +320,7 @@ html.is-lock .lock { display: flex; flex-direction: column; align-items: center;
           <a href="https://search.google.com/local/reviews?placeid=ChIJL36YRqjjxZQR4GRhe3Bl5M8" target="_blank" rel="noopener">Ler as avaliações no Google</a>
         </div>
       </div>
-      <ul class="revs">
+      <ul class="revs" data-reveal-stagger>
         <li class="rev"><p class="rev__t">“Deixo aqui a minha satisfação com os serviços prestados junto ao escritório, em especial ao Dr Oscar que além de competente, traz clareza aos processos e sendo muito paciente sobre as dúvidas e orientações.”</p><p class="rev__n"><b>Viviane Bezerra</b> · Avaliação no Google</p></li>
         <li class="rev"><p class="rev__t">“Fui muito bem atendida. O advogado exige tudo que eu preciso fazer. Deixou eu me expressar, foi um ótimo ouvinte. Recomendo para todos que estão precisando desse tipo de serviço.”</p><p class="rev__n"><b>Eliane Ferrari</b> · Avaliação no Google</p></li>
         <li class="rev"><p class="rev__t">“Gostaria de agradecer pelo excelente trabalho e profissionalismo. Sua dedicação, competência e atenção fizeram toda a diferença. É gratificante contar com um advogado tão comprometido e eficiente.”</p><p class="rev__n"><b>Thaís Pontes</b> · Avaliação no Google</p></li>
@@ -299,9 +330,9 @@ html.is-lock .lock { display: flex; flex-direction: column; align-items: center;
 
   <section class="sec faq" id="perguntas" aria-labelledby="t-faq">
     <div class="wrap">
-      <p class="kicker">Perguntas frequentes</p>
-      <h2 id="t-faq">Dúvidas de quem caiu em um golpe</h2>
-      <div style="margin-top:14px">
+      <p class="kicker" data-reveal>Perguntas frequentes</p>
+      <h2 id="t-faq" data-reveal>Dúvidas de quem caiu em um golpe</h2>
+      <div style="margin-top:14px" data-reveal-stagger>
         <details><summary>O que devo fazer imediatamente se cair em um golpe do Pix?</summary><p>Entre em contato com o seu banco o mais rápido possível para registrar a contestação (Mecanismo Especial de Devolução — MED) e faça um Boletim de Ocorrência detalhado. Em seguida, busque orientação de um advogado para avaliar a responsabilidade civil do banco pela falha na segurança da transação.</p></details>
         <details><summary>Fiz o Pix por vontade própria, enganado pelo golpista. Ainda tenho direito?</summary><p>Ter feito a transferência induzido pelo golpista não impede, por si só, a análise da responsabilidade dos bancos. A Justiça examina se houve falha de segurança, como conta aberta com dados falsos ou movimentações fora do seu padrão que não foram bloqueadas. Cada caso é analisado individualmente.</p></details>
         <details><summary>O banco negou a devolução pelo MED. Ainda dá para fazer algo?</summary><p>Em muitos casos, sim. A negativa do banco não encerra o assunto: é possível registrar reclamação no Banco Central e avaliar se cabe ação contra o banco de origem, o banco que recebeu o dinheiro ou os dois.</p></details>
@@ -315,7 +346,7 @@ html.is-lock .lock { display: flex; flex-direction: column; align-items: center;
   </section>
 
   <section class="sec sec--light final" aria-labelledby="t-final">
-    <div class="wrap">
+    <div class="wrap" data-reveal-stagger>
       <h2 id="t-final">Quanto antes você agir, melhor</h2>
       <p class="sec__lead">Prazos e pedidos ao banco fazem diferença. Responda as perguntas e fale com a equipe.</p>
       <button type="button" class="btn" data-quiz>Quero uma análise do meu caso</button>
@@ -349,7 +380,7 @@ html.is-lock .lock { display: flex; flex-direction: column; align-items: center;
   </div>
 </div>
 
-<script src="site.js?v=20261118-2" defer></script>
+<script src="site.js?v=20261119-1" defer></script>
 <script>
 // Painel de Sites (Johny): carrega depois da página, sem disputar o carregamento.
 window.addEventListener('load', function () { if (window.__gpxLock) return; setTimeout(function () { var s = document.createElement('script'); s.async = true; s.src = 'https://app.johnyweb.com/t.js'; s.setAttribute('data-site', 'sit_c888b191cf83'); document.head.appendChild(s); }, 1500); });

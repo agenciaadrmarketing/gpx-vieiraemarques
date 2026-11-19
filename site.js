@@ -1,4 +1,4 @@
-/* LP Golpe do Pix — Vieira & Marques (versão 18/11/2026)
+/* LP Golpe do Pix — Vieira & Marques (versão 19/11/2026)
  * Quiz de qualificação em 6 etapas. Todo botão da página abre o quiz; nenhum
  * leva direto ao WhatsApp. Valor digitado em R$ + banco na mesma tela; abaixo
  * de R$ 10.000 = recusa definitiva: a página inteira fica bloqueada neste
@@ -229,6 +229,21 @@
     var hero = document.querySelector(".hero");
     if (flt && hero && "IntersectionObserver" in window) {
       new IntersectionObserver(function (ents) { flt.classList.toggle("on", !ents[0].isIntersecting); }).observe(hero);
+    }
+    // Revelação ao rolar: cada bloco abaixo da primeira tela aparece com um movimento curto ao entrar na tela.
+    // O <head> só põe a classe "js" (que esconde os blocos) quando dá para revelar; aqui avisamos que assumimos.
+    var rev = document.querySelectorAll("[data-reveal], [data-reveal-stagger]");
+    if (rev.length && document.documentElement.classList.contains("js") && "IntersectionObserver" in window) {
+      window.__gpxRev = true;
+      var io = new IntersectionObserver(function (ents) {
+        ents.forEach(function (e) {
+          var acima = e.boundingClientRect.bottom < 0;
+          if (!e.isIntersecting && !acima) return;
+          var alvo = e.target; alvo.classList.add("is-visible"); io.unobserve(alvo);
+          if (alvo.hasAttribute("data-reveal-stagger")) setTimeout(function () { alvo.setAttribute("data-revealed", ""); }, acima ? 0 : 1700);
+        });
+      }, { rootMargin: "0px 0px -6% 0px", threshold: 0.04 });
+      rev.forEach(function (n) { io.observe(n); });
     }
     capturarUtm();
   }
